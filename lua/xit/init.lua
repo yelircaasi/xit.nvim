@@ -1,5 +1,3 @@
-local ts_utils = require('nvim-treesitter.ts_utils')
-local get_resolved_highlight_by_id
 get_resolved_highlight_by_id = function(id)
   local result = {}
   local main_highlight = vim.api.nvim_get_hl_by_id(id, true)
@@ -27,15 +25,25 @@ local get_resolved_highlight_by_name = function(name)
 end
 
 local set_highlighting = function()
-  local headlineHighlight = get_resolved_highlight_by_name('Normal')
+  local headlineHighlight = get_resolved_highlight_by_name('Title')
   local openHighlight = get_resolved_highlight_by_name('Normal')
-  local openCheckboxHighlight = get_resolved_highlight_by_name('Normal')
-  local ongoingHighlight = get_resolved_highlight_by_name('MoreMsg')
+  local openCheckboxHighlight = get_resolved_highlight_by_name('ErrorMsg')
+  local ongoingHighlight = get_resolved_highlight_by_name('WarningMsg')
   local checkedHighlight = get_resolved_highlight_by_name('Comment')
-  local obsoleteHighlight = get_resolved_highlight_by_name('Comment')
+  local obsoleteHighlight = get_resolved_highlight_by_name('NonText')
   local obsoleteStrikedHighlight = get_resolved_highlight_by_name('Comment')
-  local priorityHighlight = get_resolved_highlight_by_name('ErrorMsg')
-  local inquestionHighlight = get_resolved_highlight_by_name('Character')
+  local priorityHighlight = get_resolved_highlight_by_name('WarningMsg')
+  local inquestionHighlight = get_resolved_highlight_by_name('SpecialChar')
+
+  headlineHighlight.bg = nil
+  openHighlight.bg = nil
+  openCheckboxHighlight.bg = nil
+  ongoingHighlight.bg = nil
+  checkedHighlight.bg = nil
+  obsoleteHighlight.bg = nil
+  obsoleteStrikedHighlight.bg = nil
+  priorityHighlight.bg = nil
+  inquestionHighlight.bg = nil
 
   headlineHighlight.underline = true
   headlineHighlight.bold = true
@@ -51,32 +59,36 @@ local set_highlighting = function()
   obsoleteStrikedHighlight.strikethrough = true
   inquestionHighlight.strikethrough = nil
 
-  vim.api.nvim_set_hl(0, '@XitHeadline', headlineHighlight)
+  local hi = function(name, opts)
+    vim.api.nvim_set_hl(0, name, opts)
+  end
 
-  vim.api.nvim_set_hl(0, '@XitOpenCheckbox', openCheckboxHighlight)
-  vim.api.nvim_set_hl(0, '@XitOpenTaskMainLine', openHighlight)
-  vim.api.nvim_set_hl(0, '@XitOpenTaskOtherLine', openHighlight)
-  vim.api.nvim_set_hl(0, '@XitOpenTaskPriority', priorityHighlight)
+  hi('@XitHeadline', headlineHighlight)
 
-  vim.api.nvim_set_hl(0, '@XitOngoingCheckbox', ongoingHighlight)
-  vim.api.nvim_set_hl(0, '@XitOngoingTaskMainLine', ongoingHighlight)
-  vim.api.nvim_set_hl(0, '@XitOngoingTaskOtherLine', ongoingHighlight)
-  vim.api.nvim_set_hl(0, '@XitOngoingTaskPriority', priorityHighlight)
+  hi('@XitOpenCheckbox', openCheckboxHighlight)
+  hi('@XitOpenTaskMainLine', openHighlight)
+  hi('@XitOpenTaskOtherLine', openHighlight)
+  hi('@XitOpenTaskPriority', priorityHighlight)
 
-  vim.api.nvim_set_hl(0, '@XitCheckedCheckbox', checkedHighlight)
-  vim.api.nvim_set_hl(0, '@XitCheckedTaskMainLine', checkedHighlight)
-  vim.api.nvim_set_hl(0, '@XitCheckedTaskOtherLine', checkedHighlight)
-  vim.api.nvim_set_hl(0, '@XitCheckedTaskPriority', checkedHighlight)
+  hi('@XitOngoingCheckbox', ongoingHighlight)
+  hi('@XitOngoingTaskMainLine', ongoingHighlight)
+  hi('@XitOngoingTaskOtherLine', ongoingHighlight)
+  hi('@XitOngoingTaskPriority', priorityHighlight)
 
-  vim.api.nvim_set_hl(0, '@XitObsoleteCheckbox', obsoleteHighlight)
-  vim.api.nvim_set_hl(0, '@XitObsoleteTaskMainLine', obsoleteStrikedHighlight)
-  vim.api.nvim_set_hl(0, '@XitObsoleteTaskOtherLine', obsoleteStrikedHighlight)
-  vim.api.nvim_set_hl(0, '@XitObsoleteTaskPriority', obsoleteStrikedHighlight)
+  hi('@XitCheckedCheckbox', checkedHighlight)
+  hi('@XitCheckedTaskMainLine', checkedHighlight)
+  hi('@XitCheckedTaskOtherLine', checkedHighlight)
+  hi('@XitCheckedTaskPriority', checkedHighlight)
 
-  vim.api.nvim_set_hl(0, '@XitInQuestionCheckbox', inquestionHighlight)
-  vim.api.nvim_set_hl(0, '@XitInQuestionTaskMainLine', inquestionHighlight)
-  vim.api.nvim_set_hl(0, '@XitInQuestionTaskOtherLine', inquestionHighlight)
-  vim.api.nvim_set_hl(0, '@XitInQuestionTaskPriority', inquestionHighlight)
+  hi('@XitObsoleteCheckbox', obsoleteHighlight)
+  hi('@XitObsoleteTaskMainLine', obsoleteStrikedHighlight)
+  hi('@XitObsoleteTaskOtherLine', obsoleteStrikedHighlight)
+  hi('@XitObsoleteTaskPriority', obsoleteStrikedHighlight)
+
+  hi('@XitInQuestionCheckbox', inquestionHighlight)
+  hi('@XitInQuestionTaskMainLine', inquestionHighlight)
+  hi('@XitInQuestionTaskOtherLine', inquestionHighlight)
+  hi('@XitInQuestionTaskPriority', inquestionHighlight)
 end
 
 local set_mappings = function(M, augroup, options)
@@ -96,20 +108,44 @@ local set_mappings = function(M, augroup, options)
   end
 
   local names_interactions = {
-    toggle_checkbox = function() M.toggle_checkbox(false) end,
-    toggle_checkbox_reverse = function() M.toggle_checkbox(true) end,
-    jump_to_next_task = function() M.jump_to_next_task(options.wrap_jumps, jump_between) end,
-    jump_to_previous_task = function() M.jump_to_previous_task(options.wrap_jumps, jump_between) end,
-    jump_to_next_headline = function() M.jump_to_next_headline(options.wrap_jumps) end,
-    jump_to_previous_headline = function() M.jump_to_previous_headline(options.wrap_jumps) end,
-    create_new_task_before = function() M.create_new_task(true) end,
-    create_new_task_after = function() M.create_new_task(false) end,
-    create_new_headline_before = function() M.create_new_headline(true) end,
-    create_new_headline_after = function() M.create_new_headline(false) end,
+    toggle_checkbox = function()
+      M.toggle_checkbox(false)
+    end,
+    toggle_checkbox_reverse = function()
+      M.toggle_checkbox(true)
+    end,
+    jump_to_next_task = function()
+      M.jump_to_next_task(options.wrap_jumps, jump_between)
+    end,
+    jump_to_previous_task = function()
+      M.jump_to_previous_task(options.wrap_jumps, jump_between)
+    end,
+    jump_to_next_headline = function()
+      M.jump_to_next_headline(options.wrap_jumps)
+    end,
+    jump_to_previous_headline = function()
+      M.jump_to_previous_headline(options.wrap_jumps)
+    end,
+    create_new_task_before = function()
+      M.create_new_task(true)
+    end,
+    create_new_task_after = function()
+      M.create_new_task(false)
+    end,
+    create_new_headline_before = function()
+      M.create_new_headline(true)
+    end,
+    create_new_headline_after = function()
+      M.create_new_headline(false)
+    end,
     toggle_jumps = toggle_jumps,
     delete_task = M.delete_task,
-    filter_open_ongoing_tasks = function() M.filter_tasks({ 'open_task', 'ongoing_task' }) end,
-    filter_checked_tasks = function() M.filter_tasks({ 'checked_task' }) end,
+    filter_open_ongoing_tasks = function()
+      M.filter_tasks({ 'open_task', 'ongoing_task' })
+    end,
+    filter_checked_tasks = function()
+      M.filter_tasks({ 'checked_task' })
+    end,
   }
 
   vim.api.nvim_create_autocmd('FileType', {
@@ -128,23 +164,18 @@ end
 
 local get_node_for_cursor = function(cursor)
   if cursor == nil then
-    cursor = vim.api.nvim_win_get_cursor(0)
+    return vim.treesitter.get_node()
   end
-  local root = ts_utils.get_root_for_position(unpack({ cursor[1] - 1, cursor[2] }))
-  if not root then
-    return
-  end
-  return root:named_descendant_for_range(cursor[1] - 1, cursor[2], cursor[1] - 1, cursor[2])
+  return vim.treesitter.get_node({ pos = { cursor[1] - 1, cursor[2] } })
 end
 
 local get_node_of_type = function(type, cursor)
   local node = get_node_for_cursor(cursor)
-
   if node == nil then
     return nil
   end
 
-  local root = ts_utils.get_root_for_node(node)
+  local root = get_root_for_node(node)
 
   while node ~= nil and node ~= root and node:type() ~= type do
     node = node:parent()
@@ -275,48 +306,15 @@ local insert_new_indented_line = function()
   vim.api.nvim_feedkeys(key, 'n', false)
 end
 
+--------------
+--- COLORS ---
+--------------
+
 -----------------------
 -- MODULE DEFINITION --
 -----------------------
-local options = {
-  disable_default_highlights = false,
-  disable_default_mappings = false,
-  default_jump_group = 'all', -- possible values: all, open_and_ongoing
-  wrap_jumps = true,
-}
-local configured = false
+
 local M = {}
-
-M.setup = function(opts)
-  opts = opts or {}
-  options = vim.tbl_deep_extend('force', options, opts)
-  configured = true
-
-  local parser_config = require('nvim-treesitter.parsers').get_parser_configs()
-  parser_config.xit = {
-    install_info = {
-      url = 'https://github.com/synaptiko/tree-sitter-xit',
-      files = { 'src/parser.c' },
-      revision = '0.2',
-      generate_requires_npm = false,
-      requires_generate_from_grammar = false,
-    },
-    filetype = 'xit',
-  }
-
-  local augroup = vim.api.nvim_create_augroup('xit_highlights_mappings', { clear = true })
-  if not options.disable_default_highlights then
-    set_highlighting()
-    vim.api.nvim_create_autocmd('ColorScheme', {
-      group = augroup,
-      callback = set_highlighting,
-    })
-  end
-
-  if not options.disable_default_mappings then
-    set_mappings(M, augroup, options)
-  end
-end
 
 M.toggle_checkbox = function(toggle_back)
   local task_node = get_node_of_type('task')
@@ -502,8 +500,17 @@ M.delete_task = function()
   end
 end
 
+local function get_root_for_node(node)
+  local parent = node:parent()
+  while parent do
+    node = parent
+    parent = node:parent()
+  end
+  return node
+end
+
 M.filter_tasks = function(types)
-  local root = ts_utils.get_root_for_node(get_node_for_cursor())
+  local root = get_root_for_node(get_node_for_cursor())
   local tasks_to_remove = {}
 
   if types == nil then
@@ -576,6 +583,65 @@ end
 
 M.is_configured = function()
   return configured
+end
+
+local options = {
+  disable_default_highlights = false,
+  disable_default_mappings = false,
+  default_jump_group = 'all', -- possible values: all, open_and_ongoing
+  wrap_jumps = true,
+  verbose = false,
+}
+local configured = false
+
+local function set_up_treesitter()
+  vim.filetype.add({ extension = { xit = 'xit' } })
+  vim.treesitter.language.add('xit', { path = PARSER_DIR .. '/xit.so' })
+  vim.treesitter.language.register('xit', 'xit')
+
+  local query_path = debug.getinfo(1, 'S').source:sub(2):match('(.*/)lua/') .. 'queries/xit/highlights.scm'
+  local query_text = io.open(query_path):read('*a')
+  vim.treesitter.query.set('xit', 'highlights', query_text)
+end
+
+M.setup = function(opts)
+  opts = opts or {}
+  options = vim.tbl_deep_extend('force', options, opts)
+  configured = true
+
+  if opts.verbose then
+    print('Set up treesitter for xit.')
+  end
+
+  vim.api.nvim_create_autocmd('FileType', {
+    pattern = 'xit',
+    callback = function(ev)
+      if opts.verbose then
+        print('Entering .xit file and executing xit callback.')
+      end
+
+      if not vim.treesitter.language.get_lang(vim.bo.filetype) then
+        print('No Treesitter parser for ' .. vim.bo.filetype)
+      end
+
+      vim.treesitter.start(ev.buf, 'xit')
+    end,
+  })
+
+  local augroup = vim.api.nvim_create_augroup('xit_highlights_mappings', { clear = true })
+  if not options.disable_default_highlights then
+    set_highlighting()
+    vim.api.nvim_create_autocmd('ColorScheme', {
+      group = augroup,
+      callback = function()
+        set_highlighting()
+      end,
+    })
+  end
+
+  if not options.disable_default_mappings then
+    set_mappings(M, augroup, options)
+  end
 end
 
 return M
